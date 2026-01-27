@@ -13,7 +13,18 @@ export const createConsent = async (req, res) => {
   try {
     const { patientId, requesterId, purpose, expiry } = req.body;
     const token = req.headers.authorization?.split(' ')[1];
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    if (!token) return res.status(401).json({ error: "Missing token" });
+
+    let decoded;
+    try {
+      decoded = jwt.verify(token, process.env.JWT_SECRET);
+    } catch {
+      return res.status(401).json({ error: "Invalid token" });
+    }
+
+    if (!requesterId || !purpose || !expiry) {
+      return res.status(400).json({ error: "requesterId, purpose, expiry are required" });
+    }
 
     const resolvedPatientId = patientId || decoded.id;
 
@@ -37,6 +48,9 @@ export const createConsent = async (req, res) => {
     res.json({ message: "Consent created", id: data[0].id });
 
   } catch (err) {
+    if (err.message?.toLowerCase()?.includes("consents") && err.message?.toLowerCase()?.includes("does not exist")) {
+      return res.status(500).json({ error: "Supabase table 'consents' not found. Run supabase_setup.sql." });
+    }
     res.status(500).json({ error: err.message });
   }
 };

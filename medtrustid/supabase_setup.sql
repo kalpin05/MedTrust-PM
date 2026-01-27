@@ -38,6 +38,17 @@ CREATE TABLE IF NOT EXISTS access_logs (
     accessed_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
+-- Access requests table (staff requests -> patient approves/rejects)
+CREATE TABLE IF NOT EXISTS access_requests (
+    id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+    patient_id UUID REFERENCES users(id) ON DELETE CASCADE,
+    staff_id UUID REFERENCES users(id) ON DELETE CASCADE,
+    purpose VARCHAR(255) NOT NULL,
+    status VARCHAR(50) DEFAULT 'pending' CHECK (status IN ('pending', 'approved', 'rejected')),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
 -- Patient medical records table
 CREATE TABLE IF NOT EXISTS medical_records (
     id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
@@ -56,25 +67,33 @@ CREATE INDEX IF NOT EXISTS idx_consents_patient_id ON consents(patient_id);
 CREATE INDEX IF NOT EXISTS idx_consents_status ON consents(status);
 CREATE INDEX IF NOT EXISTS idx_access_logs_patient_id ON access_logs(patient_id);
 CREATE INDEX IF NOT EXISTS idx_access_logs_staff_id ON access_logs(staff_id);
+CREATE INDEX IF NOT EXISTS idx_access_requests_patient_id ON access_requests(patient_id);
+CREATE INDEX IF NOT EXISTS idx_access_requests_staff_id ON access_requests(staff_id);
+CREATE INDEX IF NOT EXISTS idx_access_requests_status ON access_requests(status);
 CREATE INDEX IF NOT EXISTS idx_medical_records_patient_id ON medical_records(patient_id);
 
 -- Enable Row Level Security (RLS)
 ALTER TABLE users ENABLE ROW LEVEL SECURITY;
 ALTER TABLE consents ENABLE ROW LEVEL SECURITY;
 ALTER TABLE access_logs ENABLE ROW LEVEL SECURITY;
+ALTER TABLE access_requests ENABLE ROW LEVEL SECURITY;
 ALTER TABLE medical_records ENABLE ROW LEVEL SECURITY;
 
 -- Users can only see their own data
+DROP POLICY IF EXISTS "Users can view own profile" ON users;
 CREATE POLICY "Users can view own profile" ON users
     FOR SELECT USING (auth.uid()::text = id::text);
 
+DROP POLICY IF EXISTS "Users can update own profile" ON users;
 CREATE POLICY "Users can update own profile" ON users
     FOR UPDATE USING (auth.uid()::text = id::text);
 
 -- Consents policies
+DROP POLICY IF EXISTS "Patients can view own consents" ON consents;
 CREATE POLICY "Patients can view own consents" ON consents
     FOR SELECT USING (auth.uid()::text = patient_id::text);
 
+DROP POLICY IF EXISTS "Staff can view all consents" ON consents;
 CREATE POLICY "Staff can view all consents" ON consents
     FOR SELECT USING (
         EXISTS (
@@ -83,13 +102,16 @@ CREATE POLICY "Staff can view all consents" ON consents
         )
     );
 
+DROP POLICY IF EXISTS "Users can create consents" ON consents;
 CREATE POLICY "Users can create consents" ON consents
     FOR INSERT WITH CHECK (auth.uid()::text = created_by::text);
 
+DROP POLICY IF EXISTS "Users can update own consents" ON consents;
 CREATE POLICY "Users can update own consents" ON consents
     FOR UPDATE USING (auth.uid()::text = patient_id::text OR auth.uid()::text = created_by::text);
 
 -- Access logs policies
+DROP POLICY IF EXISTS "Staff can view all access logs" ON access_logs;
 CREATE POLICY "Staff can view all access logs" ON access_logs
     FOR SELECT USING (
         EXISTS (
@@ -98,9 +120,11 @@ CREATE POLICY "Staff can view all access logs" ON access_logs
         )
     );
 
+DROP POLICY IF EXISTS "Patients can view own access logs" ON access_logs;
 CREATE POLICY "Patients can view own access logs" ON access_logs
     FOR SELECT USING (auth.uid()::text = patient_id::text);
 
+DROP POLICY IF EXISTS "Staff can create access logs" ON access_logs;
 CREATE POLICY "Staff can create access logs" ON access_logs
     FOR INSERT WITH CHECK (
         EXISTS (
@@ -109,10 +133,34 @@ CREATE POLICY "Staff can create access logs" ON access_logs
         )
     );
 
+-- Access requests policies
+DROP POLICY IF EXISTS "Patients can view own access requests" ON access_requests;
+CREATE POLICY "Patients can view own access requests" ON access_requests
+    FOR SELECT USING (auth.uid()::text = patient_id::text);
+
+DROP POLICY IF EXISTS "Staff can view own access requests" ON access_requests;
+CREATE POLICY "Staff can view own access requests" ON access_requests
+    FOR SELECT USING (auth.uid()::text = staff_id::text);
+
+DROP POLICY IF EXISTS "Staff can create access requests" ON access_requests;
+CREATE POLICY "Staff can create access requests" ON access_requests
+    FOR INSERT WITH CHECK (
+        auth.uid()::text = staff_id::text AND EXISTS (
+            SELECT 1 FROM users 
+            WHERE id = auth.uid() AND role = 'staff'
+        )
+    );
+
+DROP POLICY IF EXISTS "Patients can approve/reject their access requests" ON access_requests;
+CREATE POLICY "Patients can approve/reject their access requests" ON access_requests
+    FOR UPDATE USING (auth.uid()::text = patient_id::text);
+
 -- Medical records policies
+DROP POLICY IF EXISTS "Patients can view own medical records" ON medical_records;
 CREATE POLICY "Patients can view own medical records" ON medical_records
     FOR SELECT USING (auth.uid()::text = patient_id::text);
 
+DROP POLICY IF EXISTS "Staff can view medical records with consent" ON medical_records;
 CREATE POLICY "Staff can view medical records with consent" ON medical_records
     FOR SELECT USING (
         EXISTS (
@@ -136,12 +184,19 @@ END;
 $$ language 'plpgsql';
 
 -- Create triggers for updated_at
+DROP TRIGGER IF EXISTS update_users_updated_at ON users;
 CREATE TRIGGER update_users_updated_at BEFORE UPDATE ON users
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
+DROP TRIGGER IF EXISTS update_consents_updated_at ON consents;
 CREATE TRIGGER update_consents_updated_at BEFORE UPDATE ON consents
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
+DROP TRIGGER IF EXISTS update_access_requests_updated_at ON access_requests;
+CREATE TRIGGER update_access_requests_updated_at BEFORE UPDATE ON access_requests
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+DROP TRIGGER IF EXISTS update_medical_records_updated_at ON medical_records;
 CREATE TRIGGER update_medical_records_updated_at BEFORE UPDATE ON medical_records
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 

@@ -5,6 +5,7 @@ import { useNavigate } from "react-router-dom";
 export default function PatientDashboard() {
   const nav = useNavigate();
   const [consents, setConsents] = useState([]);
+  const [requests, setRequests] = useState([]);
   const [newConsent, setNewConsent] = useState({
     requesterId: "",
     purpose: "",
@@ -17,6 +18,32 @@ export default function PatientDashboard() {
     fetchConsents();
   }, []);
 
+  useEffect(() => {
+    let mounted = true;
+
+    const fetchRequests = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        if (!token) return;
+
+        const res = await api.get("/access-requests/my", {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+
+        if (mounted) setRequests(res.data.requests || []);
+      } catch (err) {
+        // keep UI alive
+      }
+    };
+
+    fetchRequests();
+    const id = setInterval(fetchRequests, 1000);
+    return () => {
+      mounted = false;
+      clearInterval(id);
+    };
+  }, []);
+
   const fetchConsents = async () => {
     try {
       const token = localStorage.getItem("token");
@@ -26,6 +53,19 @@ export default function PatientDashboard() {
       setConsents(res.data.consents || []);
     } catch (err) {
       console.error(err);
+    }
+  };
+
+  const decideRequest = async (requestId, status) => {
+    try {
+      const token = localStorage.getItem("token");
+      await api.put(
+        `/access-requests/${requestId}/decision`,
+        { status },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+    } catch (err) {
+      alert(err.response?.data?.error || "Failed");
     }
   };
 
@@ -137,6 +177,56 @@ export default function PatientDashboard() {
           <p style={{ marginTop: '0.5rem', color: '#4b5563' }}>
             Manage your healthcare data consents and access permissions
           </p>
+        </div>
+
+        <div style={{
+          backgroundColor: 'white',
+          borderRadius: '0.5rem',
+          boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)',
+          marginBottom: '2rem'
+        }}>
+          <div style={{
+            padding: '1rem 1.5rem',
+            borderBottom: '1px solid #e5e7eb',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center'
+          }}>
+            <h2 style={{ fontSize: '1.125rem', fontWeight: '500', color: '#111827' }}>Access Requests (Live)</h2>
+            <div style={{ fontSize: '0.875rem', color: '#6b7280' }}>updates every second</div>
+          </div>
+          <div style={{ padding: '1rem 1.5rem' }}>
+            {requests.filter(r => r.status === 'pending').length === 0 ? (
+              <div style={{ color: '#6b7280' }}>No pending requests.</div>
+            ) : (
+              requests
+                .filter(r => r.status === 'pending')
+                .map((r) => (
+                  <div key={r.id} style={{ padding: '0.75rem 0', borderBottom: '1px solid #e5e7eb' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', gap: '1rem', alignItems: 'center' }}>
+                      <div>
+                        <div style={{ fontWeight: '600', color: '#111827' }}>{r.purpose}</div>
+                        <div style={{ fontSize: '0.875rem', color: '#6b7280' }}>staff: {r.staff_id}</div>
+                      </div>
+                      <div style={{ display: 'flex', gap: '0.5rem' }}>
+                        <button
+                          onClick={() => decideRequest(r.id, 'approved')}
+                          style={{ backgroundColor: '#16a34a', color: 'white', border: 'none', borderRadius: '0.375rem', padding: '0.5rem 0.75rem', cursor: 'pointer' }}
+                        >
+                          Approve
+                        </button>
+                        <button
+                          onClick={() => decideRequest(r.id, 'rejected')}
+                          style={{ backgroundColor: '#dc2626', color: 'white', border: 'none', borderRadius: '0.375rem', padding: '0.5rem 0.75rem', cursor: 'pointer' }}
+                        >
+                          Reject
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))
+            )}
+          </div>
         </div>
 
         {/* Stats Cards */}

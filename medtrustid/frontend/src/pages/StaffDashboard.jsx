@@ -9,6 +9,7 @@ export default function StaffDashboard() {
   const [loading, setLoading] = useState(false);
   const [recentAccess, setRecentAccess] = useState([]);
   const [consents, setConsents] = useState([]);
+  const [requests, setRequests] = useState([]);
 
   const user = localStorage.getItem("user") ? JSON.parse(localStorage.getItem("user")) : {};
 
@@ -18,6 +19,32 @@ export default function StaffDashboard() {
       { id: 2, patient: "Jane Smith", purpose: "Routine Checkup", time: "15 mins ago", status: "granted" },
       { id: 3, patient: "Bob Johnson", purpose: "Surgery", time: "1 hour ago", status: "pending" }
     ]);
+  }, []);
+
+  useEffect(() => {
+    let mounted = true;
+
+    const fetchRequests = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        if (!token) return;
+
+        const res = await api.get("/access-requests/my", {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+
+        if (mounted) setRequests(res.data.requests || []);
+      } catch (err) {
+        // keep UI alive
+      }
+    };
+
+    fetchRequests();
+    const id = setInterval(fetchRequests, 1000);
+    return () => {
+      mounted = false;
+      clearInterval(id);
+    };
   }, []);
 
   useEffect(() => {
@@ -57,13 +84,12 @@ export default function StaffDashboard() {
     
     setLoading(true);
     try {
-      setTimeout(() => {
-        setSearchResults([
-          { id: "P001", name: "John Doe", email: "john@example.com", bloodType: "O+", lastVisit: "2024-01-15" },
-          { id: "P002", name: "Jane Smith", email: "jane@example.com", bloodType: "A+", lastVisit: "2024-01-20" }
-        ]);
-        setLoading(false);
-      }, 1000);
+      const token = localStorage.getItem("token");
+      const res = await api.get(`/patients/search?q=${encodeURIComponent(searchPatient)}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setSearchResults(res.data.patients || []);
+      setLoading(false);
     } catch (err) {
       console.error(err);
       setLoading(false);
@@ -73,18 +99,15 @@ export default function StaffDashboard() {
   const requestAccess = async (patientId, purpose) => {
     try {
       const token = localStorage.getItem("token");
-      await api.post("/consent/create", {
-        patientId,
-        requesterId: "staff-current",
-        purpose,
-        expiry: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
-      }, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      alert("Access request sent successfully!");
+      await api.post(
+        "/access-requests/create",
+        { patientId, purpose },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      alert("Request sent to patient!");
     } catch (err) {
       console.error(err);
-      alert("Failed to send access request");
+      alert(err.response?.data?.error || "Failed to send access request");
     }
   };
 
@@ -156,6 +179,49 @@ export default function StaffDashboard() {
           <p style={{ marginTop: '0.5rem', color: '#4b5563' }}>
             Welcome back, {user.name}. Manage patient access and view medical records.
           </p>
+        </div>
+
+        <div style={{
+          backgroundColor: 'white',
+          borderRadius: '0.5rem',
+          boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)',
+          marginBottom: '2rem'
+        }}>
+          <div style={{
+            padding: '1rem 1.5rem',
+            borderBottom: '1px solid #e5e7eb'
+          }}>
+            <h2 style={{ fontSize: '1.125rem', fontWeight: '500', color: '#111827' }}>My Access Requests (Live)</h2>
+          </div>
+          <div style={{ padding: '1rem 1.5rem' }}>
+            {requests.length === 0 ? (
+              <div style={{ color: '#6b7280' }}>No requests yet.</div>
+            ) : (
+              requests.map((r) => (
+                <div key={r.id} style={{ padding: '0.75rem 0', borderBottom: '1px solid #e5e7eb' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', gap: '1rem' }}>
+                    <div>
+                      <div style={{ fontWeight: '600', color: '#111827' }}>{r.purpose}</div>
+                      <div style={{ fontSize: '0.875rem', color: '#6b7280' }}>patient: {r.patient_id}</div>
+                    </div>
+                    <div style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      padding: '0.25rem 0.625rem',
+                      borderRadius: '9999px',
+                      fontSize: '0.75rem',
+                      fontWeight: '500',
+                      backgroundColor: r.status === 'approved' ? '#dcfce7' : r.status === 'rejected' ? '#fee2e2' : '#fef3c7',
+                      color: r.status === 'approved' ? '#16a34a' : r.status === 'rejected' ? '#dc2626' : '#ca8a04',
+                      height: 'fit-content'
+                    }}>
+                      {r.status}
+                    </div>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
         </div>
 
         {/* Stats Cards */}
