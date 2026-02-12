@@ -10,6 +10,11 @@ export default function StaffDashboard() {
   const [recentAccess, setRecentAccess] = useState([]);
   const [consents, setConsents] = useState([]);
   const [requests, setRequests] = useState([]);
+  const [isEncrypted, setIsEncrypted] = useState(false);
+
+  const renderData = (data, maskChars = "••••••••") => {
+    return isEncrypted ? maskChars : data;
+  };
 
   const user = localStorage.getItem("user") ? JSON.parse(localStorage.getItem("user")) : {};
 
@@ -81,7 +86,7 @@ export default function StaffDashboard() {
 
   const searchPatientData = async () => {
     if (!searchPatient.trim()) return;
-    
+
     setLoading(true);
     try {
       const token = localStorage.getItem("token");
@@ -167,6 +172,32 @@ export default function StaffDashboard() {
             >
               Logout
             </button>
+            <button
+              onClick={() => setIsEncrypted(!isEncrypted)}
+              style={{
+                backgroundColor: isEncrypted ? '#dc2626' : '#2563eb',
+                color: 'white',
+                padding: '0.5rem 0.75rem',
+                border: 'none',
+                borderRadius: '0.375rem',
+                cursor: 'pointer',
+                fontSize: '0.875rem',
+                fontWeight: '500',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem'
+              }}
+            >
+              {isEncrypted ? (
+                <>
+                  <span>🔒</span> Encrypted
+                </>
+              ) : (
+                <>
+                  <span>🔓</span> Encrypt Data
+                </>
+              )}
+            </button>
           </div>
         </div>
       </nav>
@@ -201,8 +232,8 @@ export default function StaffDashboard() {
                 <div key={r.id} style={{ padding: '0.75rem 0', borderBottom: '1px solid #e5e7eb' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', gap: '1rem' }}>
                     <div>
-                      <div style={{ fontWeight: '600', color: '#111827' }}>{r.purpose}</div>
-                      <div style={{ fontSize: '0.875rem', color: '#6b7280' }}>patient: {r.patient_id}</div>
+                      <div style={{ fontWeight: '600', color: '#111827' }}>{renderData(r.purpose)}</div>
+                      <div style={{ fontSize: '0.875rem', color: '#6b7280' }}>patient: {renderData(r.patient_id, "ID-••••")}</div>
                     </div>
                     <div style={{
                       display: 'inline-flex',
@@ -249,7 +280,7 @@ export default function StaffDashboard() {
             </div>
             <div>
               <p style={{ fontSize: '0.875rem', color: '#6b7280' }}>Total Patients</p>
-              <p style={{ fontSize: '1.5rem', fontWeight: '600', color: '#111827' }}>1,247</p>
+              <p style={{ fontSize: '1.5rem', fontWeight: '600', color: '#111827' }}>{renderData("1,247", "1,XXX")}</p>
             </div>
           </div>
 
@@ -271,7 +302,7 @@ export default function StaffDashboard() {
             </div>
             <div>
               <p style={{ fontSize: '0.875rem', color: '#6b7280' }}>Access Granted</p>
-              <p style={{ fontSize: '1.5rem', fontWeight: '600', color: '#111827' }}>89</p>
+              <p style={{ fontSize: '1.5rem', fontWeight: '600', color: '#111827' }}>{renderData("89", "XX")}</p>
             </div>
           </div>
 
@@ -293,7 +324,7 @@ export default function StaffDashboard() {
             </div>
             <div>
               <p style={{ fontSize: '0.875rem', color: '#6b7280' }}>Pending</p>
-              <p style={{ fontSize: '1.5rem', fontWeight: '600', color: '#111827' }}>12</p>
+              <p style={{ fontSize: '1.5rem', fontWeight: '600', color: '#111827' }}>{renderData("12", "XX")}</p>
             </div>
           </div>
 
@@ -315,7 +346,7 @@ export default function StaffDashboard() {
             </div>
             <div>
               <p style={{ fontSize: '0.875rem', color: '#6b7280' }}>Emergency</p>
-              <p style={{ fontSize: '1.5rem', fontWeight: '600', color: '#111827' }}>3</p>
+              <p style={{ fontSize: '1.5rem', fontWeight: '600', color: '#111827' }}>{renderData("3", "X")}</p>
             </div>
           </div>
         </div>
@@ -386,12 +417,12 @@ export default function StaffDashboard() {
                     }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         <div>
-                          <p style={{ fontWeight: '500', color: '#111827' }}>{patient.name}</p>
+                          <p style={{ fontWeight: '500', color: '#111827' }}>{renderData(patient.name)}</p>
                           <p style={{ fontSize: '0.875rem', color: '#6b7280' }}>
-                            ID: {patient.id} | {patient.email}
+                            ID: {renderData(patient.id, "ID-••••")} | {renderData(patient.email, "••••@••••.com")}
                           </p>
                           <p style={{ fontSize: '0.875rem', color: '#6b7280' }}>
-                            Blood Type: {patient.bloodType} | Last Visit: {patient.lastVisit}
+                            Blood Type: {renderData(patient.bloodType, "XX")} | Last Visit: {renderData(patient.lastVisit)}
                           </p>
                         </div>
                         <button
@@ -562,13 +593,13 @@ export default function StaffDashboard() {
                       fontWeight: '500',
                       color: '#111827',
                       borderTop: '1px solid #e5e7eb'
-                    }}>{access.patient}</td>
+                    }}>{renderData(access.patient)}</td>
                     <td style={{
                       padding: '1rem 1.5rem',
                       fontSize: '0.875rem',
                       color: '#6b7280',
                       borderTop: '1px solid #e5e7eb'
-                    }}>{access.purpose}</td>
+                    }}>{renderData(access.purpose)}</td>
                     <td style={{
                       padding: '1rem 1.5rem',
                       fontSize: '0.875rem',
@@ -619,9 +650,9 @@ export default function StaffDashboard() {
                 <div key={c.id} style={{ padding: '0.75rem 0', borderBottom: '1px solid #e5e7eb' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', gap: '1rem' }}>
                     <div>
-                      <div style={{ fontWeight: '600', color: '#111827' }}>{c.purpose}</div>
-                      <div style={{ fontSize: '0.875rem', color: '#6b7280' }}>patient: {c.patient_id}</div>
-                      <div style={{ fontSize: '0.875rem', color: '#6b7280' }}>requester: {c.requester_id}</div>
+                      <div style={{ fontWeight: '600', color: '#111827' }}>{renderData(c.purpose)}</div>
+                      <div style={{ fontSize: '0.875rem', color: '#6b7280' }}>patient: {renderData(c.patient_id, "ID-••••")}</div>
+                      <div style={{ fontSize: '0.875rem', color: '#6b7280' }}>requester: {renderData(c.requester_id, "ID-••••")}</div>
                     </div>
                     <div style={{
                       display: 'inline-flex',
