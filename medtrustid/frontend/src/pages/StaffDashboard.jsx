@@ -345,6 +345,13 @@ export default function StaffDashboard() {
               >
                 🔥 Sim DDoS
               </button>
+              <button
+                onClick={() => nav('/security-lab')}
+                disabled={simulating}
+                style={{ padding: '5px 10px', backgroundColor: '#2563eb', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', marginLeft: '10px' }}
+              >
+                🔬 Security Lab
+              </button>
             </div>
           </div>
           <div style={{ display: 'flex', gap: '20px' }}>

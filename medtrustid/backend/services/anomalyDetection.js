@@ -36,6 +36,11 @@ setInterval(() => {
 }, RATE_LIMIT_WINDOW);
 
 export const checkRateLimit = async (ip) => {
+    // Whitelist localhost for simulation/demo purposes
+    if (ip === '::1' || ip === '127.0.0.1' || ip === '::ffff:127.0.0.1') {
+        return true; // Always allow localhost
+    }
+
     const now = Date.now();
 
     // Initialize if not exists
@@ -64,6 +69,11 @@ export const checkRateLimit = async (ip) => {
 };
 
 export const recordFailedLogin = async (ip, email) => {
+    // Whitelist localhost for simulation/demo purposes
+    if (ip === '::1' || ip === '127.0.0.1' || ip === '::ffff:127.0.0.1') {
+        return; // Don't track localhost
+    }
+
     const now = Date.now();
 
     if (!failedLogins[ip]) {

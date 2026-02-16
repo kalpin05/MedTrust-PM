@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, BarChart, Bar } from 'recharts';
+import { LineChart, Line, ResponsiveContainer } from 'recharts';
 
 const SecurityDashboard = () => {
     const [stats, setStats] = useState({
@@ -11,12 +11,6 @@ const SecurityDashboard = () => {
     const [alerts, setAlerts] = useState([]);
     const [loading, setLoading] = useState(true);
     const [trafficData, setTrafficData] = useState([]);
-
-    useEffect(() => {
-        fetchData();
-        const interval = setInterval(fetchData, 5000); // Poll every 5 seconds
-        return () => clearInterval(interval);
-    }, []);
 
     const fetchData = async () => {
         try {
@@ -41,6 +35,12 @@ const SecurityDashboard = () => {
             setLoading(false);
         }
     };
+
+    useEffect(() => {
+        fetchData();
+        const interval = setInterval(fetchData, 5000); // Poll every 5 seconds
+        return () => clearInterval(interval);
+    }, []);
 
     const resolveAlert = async (id) => {
         try {
