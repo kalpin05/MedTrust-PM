@@ -1,161 +1,207 @@
-import React, { useState, useEffect } from 'react';
-import axios from 'axios';
-import { LineChart, Line, ResponsiveContainer } from 'recharts';
+import React, { useState, useEffect } from "react";
+import axios from "axios";
+import { LineChart, Line, ResponsiveContainer } from "recharts";
+import styles from "./SecurityDashboard.module.css";
 
 const SecurityDashboard = () => {
-    const [stats, setStats] = useState({
-        activeAlerts: 0,
-        blockedIps: 0,
-        systemHealth: 'Unknown'
-    });
-    const [alerts, setAlerts] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [trafficData, setTrafficData] = useState([]);
+  const [stats, setStats] = useState({
+    activeAlerts: 0,
+    blockedIps: 0,
+    systemHealth: "Unknown"
+  });
+  const [alerts, setAlerts] = useState([]);
+  const [trafficData, setTrafficData] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-    const fetchData = async () => {
-        try {
-            const [statsRes, alertsRes] = await Promise.all([
-                axios.get('http://localhost:5000/api/security/stats'),
-                axios.get('http://localhost:5000/api/security/alerts')
-            ]);
+  const fetchData = async () => {
+    try {
+      const [statsRes, alertsRes] = await Promise.all([
+        axios.get("http://localhost:5000/api/security/stats"),
+        axios.get("http://localhost:5000/api/security/alerts")
+      ]);
+      setStats(statsRes.data);
+      setAlerts(alertsRes.data);
+      setTrafficData(prev => {
+        const newData = [
+          ...prev,
+          {
+            time: new Date().toLocaleTimeString(),
+            requests:
+              Math.floor(Math.random() * 50) +
+              (statsRes.data.activeAlerts > 0 ? 100 : 0)
+          }
+        ];
+        if (newData.length > 20) newData.shift();
+        return newData;
+      });
+      setLoading(false);
+    } catch (err) {
+      console.error("Failed to fetch security data", err);
+      setLoading(false);
+    }
+  };
 
-            setStats(statsRes.data);
-            setAlerts(alertsRes.data);
+  useEffect(() => {
+    const init = () => { fetchData(); };
+    init();
+    const interval = setInterval(fetchData, 5000);
+    return () => clearInterval(interval);
+  }, []);
 
-            // Simulate traffic data for the chart
-            setTrafficData(prev => {
-                const newData = [...prev, { time: new Date().toLocaleTimeString(), requests: Math.floor(Math.random() * 50) + (statsRes.data.activeAlerts > 0 ? 100 : 0) }];
-                if (newData.length > 20) newData.shift();
-                return newData;
-            });
+  const resolveAlert = async (id) => {
+    try {
+      await axios.post(
+        `http://localhost:5000/api/security/alerts/${id}/resolve`
+      );
+      fetchData();
+    } catch (err) {
+      console.error("Failed to resolve alert", err);
+    }
+  };
 
-            setLoading(false);
-        } catch (err) {
-            console.error("Failed to fetch security data", err);
-            setLoading(false);
-        }
-    };
+  const getSeverityClass = (severity) => {
+    switch (severity) {
+      case "Critical": return styles.severityCritical;
+      case "High": return styles.severityHigh;
+      case "Medium": return styles.severityMedium;
+      default: return styles.severityLow;
+    }
+  };
 
-    useEffect(() => {
-        fetchData();
-        const interval = setInterval(fetchData, 5000); // Poll every 5 seconds
-        return () => clearInterval(interval);
-    }, []);
+  const statusPillClass =
+    stats.systemHealth === "Critical"
+      ? styles.statusCritical
+      : stats.systemHealth === "Warning"
+        ? styles.statusWarning
+        : styles.statusHealthy;
 
-    const resolveAlert = async (id) => {
-        try {
-            await axios.post(`http://localhost:5000/api/security/alerts/${id}/resolve`);
-            fetchData();
-        } catch (err) {
-            console.error("Failed to resolve alert", err);
-        }
-    };
+  const statusDotColor =
+    stats.systemHealth === "Critical"
+      ? "#F87171"
+      : stats.systemHealth === "Warning"
+        ? "#FBBF24"
+        : "#4ADE80";
 
-    const getSeverityColor = (severity) => {
-        switch (severity) {
-            case 'Critical': return '#ff4d4f';
-            case 'High': return '#faad14';
-            case 'Medium': return '#1890ff';
-            default: return '#52c41a';
-        }
-    };
+  if (loading) {
+    return <div className={styles.page}><div className={styles.content}>Loading...</div></div>;
+  }
 
-    return (
-        <div style={{ padding: '20px', backgroundColor: '#141414', minHeight: '100vh', color: '#fff', fontFamily: 'Arial, sans-serif' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-                <h1>🛡️ Cyber-Resilient Infrastructure Monitor</h1>
-                <div style={{
-                    padding: '10px 20px',
-                    borderRadius: '5px',
-                    backgroundColor: stats.systemHealth === 'Critical' ? '#ff4d4f' : stats.systemHealth === 'Warning' ? '#faad14' : '#52c41a',
-                    fontWeight: 'bold'
-                }}>
-                    System Status: {stats.systemHealth}
-                </div>
-            </div>
-
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px', marginBottom: '20px' }}>
-                <div style={cardStyle}>
-                    <h3>Active Threats</h3>
-                    <div style={{ fontSize: '48px', color: stats.activeAlerts > 0 ? '#ff4d4f' : '#52c41a' }}>
-                        {stats.activeAlerts}
-                    </div>
-                </div>
-                <div style={cardStyle}>
-                    <h3>Blocked IPs</h3>
-                    <div style={{ fontSize: '48px', color: '#faad14' }}>
-                        {stats.blockedIps}
-                    </div>
-                </div>
-                <div style={cardStyle}>
-                    <h3>Network Traffic (Req/s)</h3>
-                    <div style={{ height: '100px' }}>
-                        <ResponsiveContainer width="100%" height="100%">
-                            <LineChart data={trafficData}>
-                                <Line type="monotone" dataKey="requests" stroke="#1890ff" strokeWidth={2} dot={false} />
-                            </LineChart>
-                        </ResponsiveContainer>
-                    </div>
-                </div>
-            </div>
-
-            <div style={cardStyle}>
-                <h2>Recent Security Alerts</h2>
-                <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: '10px' }}>
-                    <thead>
-                        <tr style={{ borderBottom: '1px solid #333', textAlign: 'left' }}>
-                            <th style={{ padding: '10px' }}>Time</th>
-                            <th style={{ padding: '10px' }}>Severity</th>
-                            <th style={{ padding: '10px' }}>Type</th>
-                            <th style={{ padding: '10px' }}>Source IP</th>
-                            <th style={{ padding: '10px' }}>Message</th>
-                            <th style={{ padding: '10px' }}>Status</th>
-                            <th style={{ padding: '10px' }}>Action</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {alerts.map(alert => (
-                            <tr key={alert.id} style={{ borderBottom: '1px solid #222' }}>
-                                <td style={{ padding: '10px' }}>{new Date(alert.created_at).toLocaleTimeString()}</td>
-                                <td style={{ padding: '10px' }}>
-                                    <span style={{
-                                        padding: '2px 8px',
-                                        borderRadius: '10px',
-                                        backgroundColor: getSeverityColor(alert.severity),
-                                        color: '#000',
-                                        fontSize: '12px'
-                                    }}>
-                                        {alert.severity}
-                                    </span>
-                                </td>
-                                <td style={{ padding: '10px' }}>{alert.type}</td>
-                                <td style={{ padding: '10px' }}>{alert.source_ip}</td>
-                                <td style={{ padding: '10px' }}>{alert.message}</td>
-                                <td style={{ padding: '10px', color: alert.status === 'Resolved' ? '#52c41a' : '#ff4d4f' }}>{alert.status}</td>
-                                <td style={{ padding: '10px' }}>
-                                    {alert.status === 'Active' && (
-                                        <button
-                                            onClick={() => resolveAlert(alert.id)}
-                                            style={{ cursor: 'pointer', padding: '5px 10px', backgroundColor: '#1890ff', border: 'none', borderRadius: '4px', color: 'white' }}
-                                        >
-                                            Resolve
-                                        </button>
-                                    )}
-                                </td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
-            </div>
+  return (
+    <div className={styles.page}>
+      {/* Dark Nav */}
+      <nav className={styles.nav}>
+        <div className={styles.navInner}>
+          <div className={styles.navBrand}>
+            <div className={styles.navLogoMark}>M</div>
+            <span className={styles.navTitle}>MedTrustID</span>
+          </div>
+          <div className={`${styles.statusPill} ${statusPillClass}`}>
+            <span
+              className={styles.statusDot}
+              style={{ backgroundColor: statusDotColor }}
+            />
+            System: {stats.systemHealth}
+          </div>
         </div>
-    );
-};
+      </nav>
 
-const cardStyle = {
-    backgroundColor: '#1f1f1f',
-    padding: '20px',
-    borderRadius: '10px',
-    boxShadow: '0 4px 6px rgba(0,0,0,0.3)'
+      <div className={styles.content}>
+        <h1 className={styles.pageTitle}>
+          🛡️ Cyber-Resilient Infrastructure Monitor
+        </h1>
+
+        {/* Stats */}
+        <div className={styles.statsGrid}>
+          <div className={styles.statCard}>
+            <div className={styles.statLabel}>Active Threats</div>
+            <div
+              className={styles.statValue}
+              style={{
+                color: stats.activeAlerts > 0 ? "#F87171" : "#4ADE80"
+              }}
+            >
+              {stats.activeAlerts}
+            </div>
+          </div>
+          <div className={styles.statCard}>
+            <div className={styles.statLabel}>Blocked IPs</div>
+            <div
+              className={styles.statValue}
+              style={{ color: "#FBBF24" }}
+            >
+              {stats.blockedIps}
+            </div>
+          </div>
+          <div className={styles.statCard}>
+            <div className={styles.statLabel}>Network Traffic (Req/s)</div>
+            <div className={styles.chartWrap}>
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={trafficData}>
+                  <Line
+                    type="monotone"
+                    dataKey="requests"
+                    stroke="#60A5FA"
+                    strokeWidth={2}
+                    dot={false}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        </div>
+
+        {/* Alert Table */}
+        <div className={styles.section}>
+          <div className={styles.sectionHeader}>
+            <h2 className={styles.sectionTitle}>Recent Security Alerts</h2>
+          </div>
+          <table className={styles.table}>
+            <thead>
+              <tr>
+                <th>Time</th>
+                <th>Severity</th>
+                <th>Type</th>
+                <th>Source IP</th>
+                <th>Message</th>
+                <th>Status</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {alerts.map(alert => (
+                <tr key={alert.id}>
+                  <td style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-xs)" }}>
+                    {new Date(alert.created_at).toLocaleTimeString()}
+                  </td>
+                  <td>
+                    <span className={`${styles.severityBadge} ${getSeverityClass(alert.severity)}`}>
+                      {alert.severity}
+                    </span>
+                  </td>
+                  <td>{alert.type}</td>
+                  <td style={{ fontFamily: "var(--font-mono)" }}>{alert.source_ip}</td>
+                  <td>{alert.message}</td>
+                  <td className={alert.status === "Resolved" ? styles.statusResolved : styles.statusActive}>
+                    {alert.status}
+                  </td>
+                  <td>
+                    {alert.status === "Active" && (
+                      <button
+                        className={styles.btnResolve}
+                        onClick={() => resolveAlert(alert.id)}
+                      >
+                        Resolve
+                      </button>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
 };
 
 export default SecurityDashboard;

@@ -1,102 +1,7 @@
 import { useState } from "react";
 import api from "../services/api";
 import { useNavigate } from "react-router-dom";
-
-const styles = {
-  container: {
-    minHeight: '100vh',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-    padding: '3rem 1rem'
-  },
-  form: {
-    maxWidth: '28rem',
-    width: '100%',
-    backgroundColor: 'white',
-    padding: '2rem',
-    borderRadius: '1rem',
-    boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
-    transform: 'translateY(0)',
-    transition: 'transform 0.3s ease'
-  },
-  logo: {
-    width: '4rem',
-    height: '4rem',
-    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-    borderRadius: '1rem',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    margin: '0 auto 2rem',
-    boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)'
-  },
-  title: {
-    fontSize: '2rem',
-    fontWeight: '700',
-    color: '#1a202c',
-    textAlign: 'center',
-    marginBottom: '0.5rem'
-  },
-  subtitle: {
-    fontSize: '1rem',
-    color: '#718096',
-    textAlign: 'center',
-    marginBottom: '2rem'
-  },
-  input: {
-    width: '100%',
-    padding: '0.75rem 1rem',
-    border: '2px solid #e2e8f0',
-    borderRadius: '0.5rem',
-    fontSize: '1rem',
-    outline: 'none',
-    transition: 'all 0.3s ease',
-    boxSizing: 'border-box'
-  },
-  inputFocus: {
-    borderColor: '#667eea',
-    boxShadow: '0 0 0 3px rgba(102, 126, 234, 0.1)'
-  },
-  button: {
-    width: '100%',
-    padding: '0.75rem 1rem',
-    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-    color: 'white',
-    border: 'none',
-    borderRadius: '0.5rem',
-    fontSize: '1rem',
-    fontWeight: '600',
-    cursor: 'pointer',
-    transition: 'all 0.3s ease',
-    transform: 'translateY(0)',
-    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
-  },
-  buttonHover: {
-    transform: 'translateY(-2px)',
-    boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)'
-  },
-  error: {
-    backgroundColor: '#fed7d7',
-    border: '1px solid #fc8181',
-    color: '#c53030',
-    padding: '1rem',
-    borderRadius: '0.5rem',
-    marginBottom: '1rem',
-    textAlign: 'center'
-  },
-  link: {
-    background: 'none',
-    border: 'none',
-    color: '#667eea',
-    fontSize: '0.875rem',
-    fontWeight: '500',
-    cursor: 'pointer',
-    textDecoration: 'underline',
-    transition: 'color 0.3s ease'
-  }
-};
+import styles from "./Login.module.css";
 
 export default function Login() {
   const nav = useNavigate();
@@ -111,17 +16,14 @@ export default function Login() {
   });
 
   const change = (e) => {
-    setForm({
-      ...form,
-      [e.target.name]: e.target.value
-    });
+    setForm({ ...form, [e.target.name]: e.target.value });
   };
 
   const submit = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError("");
-    
+
     try {
       const endpoint = isRegister ? "/auth/register" : "/auth/login";
       const res = await api.post(endpoint, form);
@@ -139,129 +41,163 @@ export default function Login() {
   };
 
   return (
-    <div style={styles.container}>
-      <div style={styles.form}>
-        <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
-          <div style={styles.logo}>
-            <span style={{ color: 'white', fontWeight: 'bold', fontSize: '1.5rem' }}>M</span>
+    <div className={styles.page}>
+      {/* Hero Side */}
+      <div className={styles.hero}>
+        <div className={styles.heroContent}>
+          <div className={styles.heroLogo}>
+            <div className={styles.heroLogoMark}>M</div>
+            <span className={styles.heroLogoText}>MedTrustID</span>
           </div>
-          <h2 style={styles.title}>
-            {isRegister ? "Create your account" : "Sign in to MedTrustID"}
+
+          <h1 className={styles.heroTitle}>
+            Your Health Data,{" "}
+            <span className={styles.heroTitleAccent}>Your Control.</span>
+          </h1>
+
+          <p className={styles.heroSubtitle}>
+            A secure identity platform that puts patients in command of their
+            healthcare data — with real-time consent, zero-trust access, and
+            full transparency.
+          </p>
+
+          <div className={styles.features}>
+            <div className={styles.feature}>
+              <div className={styles.featureIcon}>🔐</div>
+              <div className={styles.featureText}>
+                <h4>End-to-End Encrypted</h4>
+                <p>Every piece of patient data is encrypted at rest and in transit with military-grade cryptography.</p>
+              </div>
+            </div>
+            <div className={styles.feature}>
+              <div className={styles.featureIcon}>⚡</div>
+              <div className={styles.featureText}>
+                <h4>Real-Time Consent Tracking</h4>
+                <p>Grant or revoke data access instantly. See who accessed your records and when.</p>
+              </div>
+            </div>
+            <div className={styles.feature}>
+              <div className={styles.featureIcon}>🛡️</div>
+              <div className={styles.featureText}>
+                <h4>Cyber-Resilient Infrastructure</h4>
+                <p>Built-in anomaly detection, brute-force protection, and DDoS mitigation in real-time.</p>
+              </div>
+            </div>
+          </div>
+
+          <div className={styles.trustStrip}>
+            <div className={styles.trustLabel}>Trusted by healthcare providers</div>
+            <div className={styles.trustItems}>
+              <div className={styles.trustItem}>
+                <span className={styles.trustDot} />
+                HIPAA Compliant
+              </div>
+              <div className={styles.trustItem}>
+                <span className={styles.trustDot} />
+                SOC 2 Type II
+              </div>
+              <div className={styles.trustItem}>
+                <span className={styles.trustDot} />
+                Zero-Trust Architecture
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Form Side */}
+      <div className={styles.formSide}>
+        <div className={styles.formHeader}>
+          <h2 className={styles.formTitle}>
+            {isRegister ? "Create your account" : "Welcome back"}
           </h2>
-          <p style={styles.subtitle}>
-            Secure healthcare identity management
+          <p className={styles.formSubtitle}>
+            {isRegister
+              ? "Join MedTrustID to manage your healthcare identity"
+              : "Sign in to access your healthcare dashboard"}
           </p>
         </div>
-        
-        <form onSubmit={submit}>
-          <div style={{ marginBottom: '1.5rem' }}>
-            {isRegister && (
-              <div style={{ marginBottom: '1rem' }}>
-                <input
-                  name="name"
-                  type="text"
-                  required
-                  style={{
-                    ...styles.input,
-                    borderRadius: '0.5rem 0.5rem 0 0'
-                  }}
-                  placeholder="Full Name"
-                  value={form.name}
-                  onChange={change}
-                  onFocus={(e) => Object.assign(e.target.style, styles.inputFocus)}
-                  onBlur={(e) => e.target.style.boxShadow = 'none'}
-                />
-              </div>
-            )}
-            
-            <div style={{ marginBottom: '1rem' }}>
+
+        <form className={styles.form} onSubmit={submit}>
+          {isRegister && (
+            <div className={styles.fieldGroup}>
+              <label className={styles.fieldLabel}>Full Name</label>
               <input
-                name="email"
-                type="email"
+                name="name"
+                type="text"
                 required
-                style={{
-                  ...styles.input,
-                  borderRadius: isRegister ? '0' : '0.5rem',
-                  marginTop: isRegister ? '-1px' : '0'
-                }}
-                placeholder="Email address"
-                value={form.email}
+                className={styles.input}
+                placeholder="Enter your full name"
+                value={form.name}
                 onChange={change}
-                onFocus={(e) => Object.assign(e.target.style, styles.inputFocus)}
-                onBlur={(e) => e.target.style.boxShadow = 'none'}
               />
-            </div>
-
-            <div style={{ marginBottom: '1rem' }}>
-              <input
-                name="password"
-                type="password"
-                required
-                style={{
-                  ...styles.input,
-                  borderRadius: isRegister ? '0' : '0.5rem',
-                  marginTop: '-1px'
-                }}
-                placeholder="Password"
-                value={form.password}
-                onChange={change}
-                onFocus={(e) => Object.assign(e.target.style, styles.inputFocus)}
-                onBlur={(e) => e.target.style.boxShadow = 'none'}
-              />
-            </div>
-
-            {isRegister && (
-              <div style={{ marginBottom: '1rem' }}>
-                <select
-                  name="role"
-                  value={form.role}
-                  onChange={change}
-                  style={{
-                    ...styles.input,
-                    borderRadius: '0 0 0.5rem 0.5rem',
-                    marginTop: '-1px',
-                    appearance: 'none'
-                  }}
-                >
-                  <option value="patient">Patient</option>
-                  <option value="staff">Hospital Staff</option>
-                </select>
-              </div>
-            )}
-          </div>
-
-          {error && (
-            <div style={styles.error}>
-              {error}
             </div>
           )}
 
-          <div style={{ marginBottom: '1rem' }}>
-            <button
-              type="submit"
-              disabled={loading}
-              style={{
-                ...styles.button,
-                opacity: loading ? 0.6 : 1,
-                cursor: loading ? 'not-allowed' : 'pointer',
-                pointerEvents: loading ? 'none' : 'auto'
-              }}
-              onMouseEnter={(e) => !loading && Object.assign(e.target.style, styles.buttonHover)}
-              onMouseLeave={(e) => e.target.style.transform = 'translateY(0)'}
-            >
-              {loading ? "Processing..." : (isRegister ? "Register" : "Sign in")}
-            </button>
+          <div className={styles.fieldGroup}>
+            <label className={styles.fieldLabel}>Email</label>
+            <input
+              name="email"
+              type="email"
+              required
+              className={styles.input}
+              placeholder="you@hospital.com"
+              value={form.email}
+              onChange={change}
+            />
           </div>
 
-          <div style={{ textAlign: 'center' }}>
+          <div className={styles.fieldGroup}>
+            <label className={styles.fieldLabel}>Password</label>
+            <input
+              name="password"
+              type="password"
+              required
+              className={styles.input}
+              placeholder="Enter your password"
+              value={form.password}
+              onChange={change}
+            />
+          </div>
+
+          {isRegister && (
+            <div className={styles.fieldGroup}>
+              <label className={styles.fieldLabel}>Role</label>
+              <select
+                name="role"
+                value={form.role}
+                onChange={change}
+                className={`${styles.input} ${styles.select}`}
+              >
+                <option value="patient">Patient</option>
+                <option value="staff">Hospital Staff</option>
+              </select>
+            </div>
+          )}
+
+          {error && (
+            <div className={styles.error}>
+              <span>⚠</span> {error}
+            </div>
+          )}
+
+          <button
+            type="submit"
+            disabled={loading}
+            className={styles.submitBtn}
+          >
+            {loading ? "Processing..." : isRegister ? "Create Account" : "Sign In"}
+          </button>
+
+          <div className={styles.switchLink}>
             <button
               type="button"
-              onClick={() => setIsRegister(!isRegister)}
-              style={styles.link}
-              onMouseEnter={(e) => e.target.style.color = '#764ba2'}
-              onMouseLeave={(e) => e.target.style.color = '#667eea'}
+              onClick={() => { setIsRegister(!isRegister); setError(""); }}
+              className={styles.switchBtn}
             >
-              {isRegister ? "Already have an account? Sign in" : "Need an account? Register"}
+              {isRegister
+                ? "Already have an account? Sign in"
+                : "Need an account? Register"}
             </button>
           </div>
         </form>

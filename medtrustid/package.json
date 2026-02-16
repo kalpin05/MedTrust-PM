@@ -1,0 +1,18 @@
+{
+    "name": "medtrustid-root",
+    "version": "1.0.0",
+    "description": "Root package to run backend and frontend concurrently",
+    "scripts": {
+        "start": "concurrently \"npm run start:backend\" \"npm run start:frontend\" --names \"BACKEND,FRONTEND\" --prefix-colors \"blue,green\"",
+        "start:backend": "cd backend && npm start",
+        "start:frontend": "cd frontend && npm start",
+        "install-all": "npm install && cd backend && npm install && cd ../frontend && npm install",
+        "dev": "npm start"
+    },
+    "keywords": [],
+    "author": "",
+    "license": "ISC",
+    "devDependencies": {
+        "concurrently": "^8.2.2"
+    }
+}
