@@ -7,24 +7,23 @@ export default function StaffDashboard() {
   const [searchPatient, setSearchPatient] = useState("");
   const [searchResults, setSearchResults] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [recentAccess, setRecentAccess] = useState([]);
+  const recentAccess = [
+    { id: 1, patient: "John Doe", purpose: "Emergency Treatment", time: "2 mins ago", status: "granted" },
+    { id: 2, patient: "Jane Smith", purpose: "Routine Checkup", time: "15 mins ago", status: "granted" },
+    { id: 3, patient: "Bob Johnson", purpose: "Surgery", time: "1 hour ago", status: "pending" }
+  ];
   const [consents, setConsents] = useState([]);
   const [requests, setRequests] = useState([]);
   const [isEncrypted, setIsEncrypted] = useState(false);
+  const [securityStats, setSecurityStats] = useState({ activeAlerts: 0, blockedIps: 0, systemHealth: 'Healthy' });
+  const [simulating, setSimulating] = useState(false);
+  const [logs, setLogs] = useState(["System monitor initialized...", "Waiting for events..."]);
 
   const renderData = (data, maskChars = "••••••••") => {
     return isEncrypted ? maskChars : data;
   };
 
   const user = localStorage.getItem("user") ? JSON.parse(localStorage.getItem("user")) : {};
-
-  useEffect(() => {
-    setRecentAccess([
-      { id: 1, patient: "John Doe", purpose: "Emergency Treatment", time: "2 mins ago", status: "granted" },
-      { id: 2, patient: "Jane Smith", purpose: "Routine Checkup", time: "15 mins ago", status: "granted" },
-      { id: 3, patient: "Bob Johnson", purpose: "Surgery", time: "1 hour ago", status: "pending" }
-    ]);
-  }, []);
 
   useEffect(() => {
     let mounted = true;
@@ -77,6 +76,56 @@ export default function StaffDashboard() {
       clearInterval(id);
     };
   }, []);
+
+  useEffect(() => {
+    let mounted = true;
+    const fetchSecurityStats = async () => {
+      try {
+        const res = await api.get('http://localhost:5000/api/security/stats');
+        if (mounted) setSecurityStats(res.data);
+      } catch (err) {
+        console.error(err);
+      }
+    };
+    fetchSecurityStats();
+    const id = setInterval(fetchSecurityStats, 2000); // Poll faster for security updates
+    return () => {
+      mounted = false;
+      clearInterval(id);
+    };
+  }, []);
+
+  const triggerSimulation = async (type) => {
+    setSimulating(true);
+    if (type === 'scenario') {
+      setLogs(prev => ["🔄 Initiating Full Attack Scenario...", ...prev]);
+      try {
+        await api.post('http://localhost:5000/api/simulation/start', { type });
+
+        // Artificial delay for storytelling
+        setTimeout(() => setLogs(prev => ["✅ Phase 1: Normal Traffic Detected.", ...prev]), 1000);
+        setTimeout(() => setLogs(prev => ["⚠️ Phase 2: Suspicious Reconnaissance Activity...", ...prev]), 4000);
+        setTimeout(() => setLogs(prev => ["🚨 Phase 3: BRUTE FORCE ATTACK DETECTED!", ...prev]), 6000);
+        setTimeout(() => setLogs(prev => ["🚨 Phase 3: DDoS BURST INCOMING!", ...prev]), 8000);
+        setTimeout(() => setLogs(prev => ["🛡️ DEFENSE SYSTEM ACTIVE: Blocking IPs...", ...prev]), 9000);
+        setTimeout(() => setLogs(prev => ["✅ THREAT NEUTRALIZED. System Secure.", ...prev]), 11000);
+
+      } catch (err) {
+        setLogs(prev => ["❌ Simulation Failed to Start", ...prev]);
+      } finally {
+        setTimeout(() => setSimulating(false), 12000);
+      }
+    } else {
+      try {
+        await api.post('http://localhost:5000/api/simulation/start', { type });
+        setLogs(prev => [`⚡ Started ${type} simulation...`, ...prev]);
+      } catch (err) {
+        alert("Failed to start simulation");
+      } finally {
+        setTimeout(() => setSimulating(false), 2000);
+      }
+    }
+  };
 
   const logout = () => {
     localStorage.removeItem("token");
@@ -252,6 +301,80 @@ export default function StaffDashboard() {
                 </div>
               ))
             )}
+          </div>
+        </div>
+
+
+        {/* Security Status Widget */}
+        <div style={{
+          backgroundColor: securityStats.systemHealth === 'Critical' ? '#fee2e2' : securityStats.systemHealth === 'Warning' ? '#fef3c7' : '#dcfce7',
+          borderRadius: '0.5rem',
+          boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)',
+          marginBottom: '2rem',
+          border: `2px solid ${securityStats.systemHealth === 'Critical' ? '#dc2626' : securityStats.systemHealth === 'Warning' ? '#d97706' : '#16a34a'}`
+        }}>
+          <div style={{
+            padding: '1rem 1.5rem',
+            borderBottom: '1px solid rgba(0,0,0,0.1)',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center'
+          }}>
+            <h2 style={{ fontSize: '1.125rem', fontWeight: 'bold', color: '#111827', display: 'flex', alignItems: 'center', gap: '10px' }}>
+              🛡️ Cyber Security Status: {securityStats.systemHealth.toUpperCase()}
+            </h2>
+            <div style={{ display: 'flex', gap: '10px' }}>
+              <button
+                onClick={() => triggerSimulation('scenario')}
+                disabled={simulating}
+                style={{ padding: '5px 15px', backgroundColor: '#dc2626', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}
+              >
+                🚀 Run Attack Scenario
+              </button>
+              <button
+                onClick={() => triggerSimulation('brute_force')}
+                disabled={simulating}
+                style={{ padding: '5px 10px', backgroundColor: '#4b5563', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
+              >
+                ⚡ Sim Brute Force
+              </button>
+              <button
+                onClick={() => triggerSimulation('ddos')}
+                disabled={simulating}
+                style={{ padding: '5px 10px', backgroundColor: '#4b5563', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
+              >
+                🔥 Sim DDoS
+              </button>
+            </div>
+          </div>
+          <div style={{ display: 'flex', gap: '20px' }}>
+            <div style={{ padding: '1rem 1.5rem', flex: 1 }}>
+              <div style={{ marginBottom: '10px' }}>
+                <span style={{ fontWeight: 'bold' }}>Active Threats:</span>
+                <span style={{ marginLeft: '10px', color: securityStats.activeAlerts > 0 ? '#dc2626' : '#16a34a', fontWeight: 'bold', fontSize: '1.2em' }}>
+                  {securityStats.activeAlerts}
+                </span>
+              </div>
+              <div style={{ marginBottom: '10px' }}>
+                <span style={{ fontWeight: 'bold' }}>Blocked IPs:</span>
+                <span style={{ marginLeft: '10px', fontWeight: 'bold', fontSize: '1.2em' }}>
+                  {securityStats.blockedIps}
+                </span>
+              </div>
+              <div>
+                <span style={{ fontWeight: 'bold' }}>Protection:</span>
+                <span style={{ marginLeft: '10px', color: '#16a34a' }}>
+                  {securityStats.systemHealth === 'Critical' ? 'Mitigation Active (Blocking IPs)' : 'Monitoring'}
+                </span>
+              </div>
+            </div>
+            {/* Live Feed */}
+            <div style={{ flex: 1, padding: '10px', borderLeft: '1px solid #ccc', backgroundColor: '#111827', color: '#00ff00', fontFamily: 'monospace', height: '150px', overflowY: 'auto', fontSize: '0.85em' }}>
+              <div style={{ borderBottom: '1px solid #333', marginBottom: '5px', paddingBottom: '3px', fontWeight: 'bold', color: '#fff' }}>LIVE SECURITY FEED</div>
+              {logs.map((log, i) => (
+                <div key={i} style={{ marginBottom: '2px' }}>{`> ${log}`}</div>
+              ))}
+            </div>
           </div>
         </div>
 
