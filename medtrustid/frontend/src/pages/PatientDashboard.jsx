@@ -1,13 +1,10 @@
 import { useState, useEffect } from "react";
 import api from "../services/api";
-import { useNavigate } from "react-router-dom";
-import Navbar from "../components/Navbar";
 import StatCard from "../components/StatCard";
 import Badge from "../components/Badge";
 import styles from "./PatientDashboard.module.css";
 
 export default function PatientDashboard() {
-  const nav = useNavigate();
   const [consents, setConsents] = useState([]);
   const [requests, setRequests] = useState([]);
   const [newConsent, setNewConsent] = useState({
@@ -101,20 +98,12 @@ export default function PatientDashboard() {
     }
   };
 
-  const logout = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
-    nav("/");
-  };
-
   const pendingRequests = requests.filter(r => r.status === "pending");
   const activeConsents = consents.filter(c => c.status === "active");
   const revokedConsents = consents.filter(c => c.status === "revoked");
 
   return (
     <div className={styles.page}>
-      <Navbar user={user} onLogout={logout} />
-
       <div className={styles.content}>
         <div className={styles.header}>
           <h1 className={styles.greeting}>Welcome back, {user.name}</h1>

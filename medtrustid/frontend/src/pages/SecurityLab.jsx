@@ -53,7 +53,32 @@ const SecurityLab = () => {
   const [spoofAuth, setSpoofAuth] = useState(false);
   const [spoofLog, setSpoofLog] = useState("");
 
+  // 9. Advanced Malware (CSV)
+  const [csvRunning, setCsvRunning] = useState(false);
+  const [csvLogs, setCsvLogs] = useState([]);
+
   // --- Logic ---
+  const runCsvSimulation = async () => {
+    setCsvRunning(true);
+    setCsvLogs(["Initiating Advanced Malware Simulation from CSV data...", "Sending request to backend..."]);
+    try {
+      const response = await fetch("http://localhost:5000/api/simulation/start", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ type: "malware_csv" })
+      });
+      const data = await response.json();
+      if (data.status === 'completed' && data.logs) {
+        setCsvLogs(prev => [...prev, ...data.logs]);
+      } else {
+        setCsvLogs(prev => [...prev, `Server Status: ${data.message}`]);
+      }
+    } catch (err) {
+      setCsvLogs(prev => [...prev, `❌ Error: ${err.message}`]);
+    }
+    setTimeout(() => setCsvRunning(false), 2000);
+  };
+
   useEffect(() => {
     let interval;
     if (bfRunning && !bfLocked) {
@@ -465,6 +490,44 @@ const SecurityLab = () => {
                   {spoofLog}
                 </div>
               )}
+            </div>
+          </div>
+
+          {/* 9. Advanced Malware (CSV) */}
+          <div className={styles.module}>
+            <div className={styles.moduleHeader}>
+              <div className={styles.moduleTitle}>🦠 Advanced Malware (CSV)</div>
+              <Badge variant={csvRunning ? "warning" : "danger"}>{csvRunning ? "Running" : "Idle"}</Badge>
+            </div>
+            <div className={styles.moduleBody}>
+              <p className={styles.description}>
+                Launch targeted Ransomware, Trojan, and Spyware attacks using real-world signatures from the generated CSV dataset.
+              </p>
+
+              <button
+                className={`${styles.btn} ${csvRunning ? styles.btnDanger : styles.btnPurple}`}
+                onClick={runCsvSimulation}
+                disabled={csvRunning}
+                style={{ marginBottom: "var(--space-4)", width: "100%" }}
+              >
+                {csvRunning ? "Simulating Attacks..." : "Launch CSV Attacks"}
+              </button>
+
+              <div className={styles.terminal}>
+                {csvLogs.length === 0 ? (
+                  <div style={{ color: "var(--color-dark-muted)" }}>Waiting to start simulation...</div>
+                ) : (
+                  csvLogs.map((log, i) => (
+                    <div key={i} style={{
+                      color: log.includes("❌") ? "var(--color-danger)" :
+                        log.includes("Server Status") ? "var(--color-success)" :
+                          "inherit"
+                    }}>
+                      {log}
+                    </div>
+                  ))
+                )}
+              </div>
             </div>
           </div>
         </div>

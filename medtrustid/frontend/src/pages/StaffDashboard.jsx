@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import api from "../services/api";
 import { useNavigate } from "react-router-dom";
-import Navbar from "../components/Navbar";
 import StatCard from "../components/StatCard";
 import Badge from "../components/Badge";
 import styles from "./StaffDashboard.module.css";
@@ -13,7 +12,7 @@ export default function StaffDashboard() {
   const [loading, setLoading] = useState(false);
   const [consents, setConsents] = useState([]);
   const [requests, setRequests] = useState([]);
-  const [isEncrypted, setIsEncrypted] = useState(false);
+
   const [securityStats, setSecurityStats] = useState({
     activeAlerts: 0,
     blockedIps: 0,
@@ -35,8 +34,7 @@ export default function StaffDashboard() {
     ? JSON.parse(localStorage.getItem("user"))
     : {};
 
-  const renderData = (data, maskChars = "••••••••") =>
-    isEncrypted ? maskChars : data;
+  const renderData = (data) => data;
 
   // Fetch requests
   useEffect(() => {
@@ -117,12 +115,6 @@ export default function StaffDashboard() {
     }
   };
 
-  const logout = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
-    nav("/");
-  };
-
   const searchPatientData = async () => {
     if (!searchPatient.trim()) return;
     setLoading(true);
@@ -158,22 +150,13 @@ export default function StaffDashboard() {
     securityStats.systemHealth === "Critical"
       ? styles.bannerCritical
       : securityStats.systemHealth === "Warning"
-      ? styles.bannerWarning
-      : styles.bannerHealthy;
+        ? styles.bannerWarning
+        : styles.bannerHealthy;
 
-  const encryptToggle = (
-    <button
-      className={`${styles.encryptToggle} ${isEncrypted ? styles.encryptToggleActive : ""}`}
-      onClick={() => setIsEncrypted(!isEncrypted)}
-    >
-      {isEncrypted ? "🔒 Encrypted" : "🔓 Encrypt"}
-    </button>
-  );
+
 
   return (
     <div className={styles.page}>
-      <Navbar user={user} onLogout={logout} actions={encryptToggle} />
-
       <div className={styles.content}>
         <div className={styles.header}>
           <h1 className={styles.greeting}>Staff Dashboard</h1>

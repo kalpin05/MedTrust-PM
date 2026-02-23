@@ -146,3 +146,36 @@ export const isIpBlocked = async (ip) => {
         return false;
     }
 };
+
+export const scanPayload = async (ip, filename, hash) => {
+    if (!filename && !hash) return true;
+
+    const malwareIndicators = [
+        '.exe', '.ps1', '.bat', '.msi', '.dll', '.php', '.zip.exe'
+    ];
+
+    const isMaliciousFile = filename && malwareIndicators.some(indicator => filename.toLowerCase().endsWith(indicator));
+
+    // In a real scenario, we'd check hash against a DB of known malware
+    // Here we'll treat any hash provided with a suspicious extension as malicious
+    if (isMaliciousFile) {
+        const attackType = filename.includes('ransom') ? 'Ransomware' :
+            filename.includes('trojan') ? 'Trojan' :
+                filename.includes('backdoor') ? 'Backdoor' :
+                    filename.includes('keylog') ? 'Keylogger' :
+                        filename.includes('spy') ? 'Spyware' : 'Malware';
+
+        await createAlert(
+            ip,
+            attackType,
+            'Critical',
+            `Malicious payload detected: ${filename} (Hash: ${hash || 'N/A'})`
+        );
+
+        // Auto-block the source IP
+        await blockIp(ip, `Malware distribution detected: ${attackType}`);
+        return false;
+    }
+
+    return true;
+};

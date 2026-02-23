@@ -68,19 +68,7 @@ const SecurityDashboard = () => {
     }
   };
 
-  const statusPillClass =
-    stats.systemHealth === "Critical"
-      ? styles.statusCritical
-      : stats.systemHealth === "Warning"
-        ? styles.statusWarning
-        : styles.statusHealthy;
 
-  const statusDotColor =
-    stats.systemHealth === "Critical"
-      ? "#F87171"
-      : stats.systemHealth === "Warning"
-        ? "#FBBF24"
-        : "#4ADE80";
 
   if (loading) {
     return <div className={styles.page}><div className={styles.content}>Loading...</div></div>;
@@ -88,23 +76,6 @@ const SecurityDashboard = () => {
 
   return (
     <div className={styles.page}>
-      {/* Dark Nav */}
-      <nav className={styles.nav}>
-        <div className={styles.navInner}>
-          <div className={styles.navBrand}>
-            <div className={styles.navLogoMark}>M</div>
-            <span className={styles.navTitle}>MedTrustID</span>
-          </div>
-          <div className={`${styles.statusPill} ${statusPillClass}`}>
-            <span
-              className={styles.statusDot}
-              style={{ backgroundColor: statusDotColor }}
-            />
-            System: {stats.systemHealth}
-          </div>
-        </div>
-      </nav>
-
       <div className={styles.content}>
         <h1 className={styles.pageTitle}>
           🛡️ Cyber-Resilient Infrastructure Monitor
