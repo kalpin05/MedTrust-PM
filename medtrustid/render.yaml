@@ -1,0 +1,24 @@
+services:
+  - type: web
+    name: medtrustid-backend
+    env: node
+    rootDir: backend
+    buildCommand: npm install
+    startCommand: node server.js
+    envVars:
+      - key: PORT
+        value: 5000
+      - key: NODE_ENV
+        value: production
+      - key: FRONTEND_URL
+        sync: false # Set this in Render Dashboard
+      - key: JWT_SECRET
+        sync: false # Set this in Render Dashboard
+      - key: SUPABASE_URL
+        sync: false # Set this in Render Dashboard
+      - key: SUPABASE_ANON_KEY
+        sync: false # Set this in Render Dashboard
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false # Set this in Render Dashboard
+      - key: DATABASE_URL
+        sync: false # Set this in Render Dashboard
